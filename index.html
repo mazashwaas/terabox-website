@@ -521,12 +521,60 @@
     // ── CONFIG ──────────────────────────────────────────
     const API_BASE = "https://terabox-api-3zp5.onrender.com";
 
+    // ── AUTO LINK CONVERTER ──────────────────────────────
+    // All known TeraBox domains → normalize to terabox.com
+    const TERABOX_DOMAINS = [
+      "terabox.com", "www.terabox.com",
+      "terabox.app", "www.terabox.app",
+      "teraboxlink.com", "www.teraboxlink.com",
+      "1024terabox.com", "www.1024terabox.com",
+      "teraboxshare.com", "www.teraboxshare.com",
+      "freeterabox.com", "www.freeterabox.com",
+      "4funbox.co", "www.4funbox.co",
+      "tibibox.com", "www.tibibox.com",
+      "terafileshare.com", "www.terafileshare.com",
+      "dm.terabox.app",
+    ];
+
+    function normalizeTeraboxUrl(input) {
+      input = input.trim();
+      if (!input.startsWith("http")) input = "https://" + input;
+      try {
+        const u = new URL(input);
+        const host = u.hostname.toLowerCase();
+        const isTerabox = TERABOX_DOMAINS.some(d => host === d || host.endsWith("." + d));
+        if (!isTerabox) return null; // not a terabox link
+        // Keep path & query, just normalize domain
+        u.hostname = "www.terabox.com";
+        u.protocol = "https:";
+        return u.toString();
+      } catch {
+        return null;
+      }
+    }
+
+    // Auto-convert on input change
+    document.getElementById("linkInput").addEventListener("input", function () {
+      const val = this.value.trim();
+      if (!val) return;
+      const normalized = normalizeTeraboxUrl(val);
+      if (normalized && normalized !== val) {
+        this.value = normalized;
+        this.style.color = "var(--success)";
+        setTimeout(() => { this.style.color = ""; }, 1200);
+        showToast("Link converted ✓", "success");
+      }
+    });
+
     // ── PASTE ────────────────────────────────────────────
     async function pasteLink() {
       try {
         const text = await navigator.clipboard.readText();
-        document.getElementById("linkInput").value = text;
-        document.getElementById("linkInput").focus();
+        const input = document.getElementById("linkInput");
+        input.value = text;
+        // Trigger conversion
+        input.dispatchEvent(new Event("input"));
+        input.focus();
       } catch {
         showToast("Paste manually using Ctrl+V", "error");
       }
@@ -539,7 +587,7 @@
 
     // ── FETCH ────────────────────────────────────────────
     async function fetchLink() {
-      const url = document.getElementById("linkInput").value.trim();
+      let url = document.getElementById("linkInput").value.trim();
       const btn = document.getElementById("fetchBtn");
       const result = document.getElementById("result");
 
@@ -549,10 +597,14 @@
         return;
       }
 
-      if (!url.startsWith("http")) {
-        showToast("Invalid URL — must start with https://", "error");
+      // Auto-convert before fetching
+      const converted = normalizeTeraboxUrl(url);
+      if (!converted) {
+        showToast("Invalid or unsupported link", "error");
         return;
       }
+      url = converted;
+      document.getElementById("linkInput").value = url;
 
       // Loading state
       btn.disabled = true;
@@ -574,7 +626,7 @@
 
         renderResult(data);
       } catch (err) {
-        showError("Network error — make sure the API is running.");
+        showError("Network error — API may be starting up, try again in a moment.");
       } finally {
         btn.disabled = false;
         btn.textContent = "Fetch →";
@@ -582,10 +634,15 @@
     }
 
     // ── RENDER RESULT ────────────────────────────────────
+    // Store data globally for player access
+    let _currentData = null;
+
     function renderResult(data) {
+      _currentData = data;
       const result = document.getElementById("result");
       const isVideo = data.is_video;
       const proxyStream = `${API_BASE}/download?url=${encodeURIComponent(data.url)}`;
+      const proxyDownload = `${API_BASE}/download?url=${encodeURIComponent(data.url)}&dl=1`;
       const thumb = data.thumbs?.url3 || data.thumbs?.url2 || data.thumbs?.url1 || null;
       const ext = (data.filename || "").split(".").pop().toUpperCase();
 
@@ -594,19 +651,22 @@
 
           ${isVideo ? `
           <!-- VIDEO PLAYER -->
-          <div class="player-wrap">
-            ${thumb ? `<div class="thumb-bg" style="background-image:url('${thumb}')"></div>` : ""}
+          <div class="player-wrap" id="playerWrap">
+            ${thumb ? `<div class="thumb-bg" id="thumbBg" style="background-image:url('${escHtml(thumb)}')"></div>` : ""}
             <div class="player-placeholder" id="placeholder">
-              <div class="play-icon-big" onclick="startPlay('${proxyStream}', '${escHtml(data.filename)}')">▶</div>
-              <p style="font-size:14px;">Click to play</p>
+              <div class="play-icon-big" id="playBtn">▶</div>
+              <p style="font-size:14px;">Click to stream</p>
               ${data.size ? `<p style="font-size:12px;opacity:0.5;">${data.size}</p>` : ""}
             </div>
-            <video id="videoPlayer" controls style="display:none;" preload="metadata">
-              Your browser does not support video playback.
-            </video>
+            <video
+              id="videoPlayer"
+              controls
+              preload="metadata"
+              style="display:none;width:100%;height:100%;"
+              playsinline
+            ></video>
           </div>
           ` : `
-          <!-- FILE ICON -->
           <div style="padding:32px;text-align:center;">
             <div style="font-size:48px;margin-bottom:8px;">📄</div>
             <p style="color:var(--muted);font-size:14px;">File ready to download</p>
@@ -628,41 +688,58 @@
           <!-- ACTIONS -->
           <div class="actions">
             ${isVideo ? `
-            <button class="btn btn-primary" onclick="startPlay('${proxyStream}', '${escHtml(data.filename)}')">
-              ▶ &nbsp;Play Video
-            </button>
+            <button class="btn btn-primary" id="playBtnMain">▶ &nbsp;Play Video</button>
             ` : ""}
-            <a class="btn btn-secondary" href="${proxyStream}&dl=1" download="${escHtml(data.filename)}">
+            <a class="btn btn-secondary" href="${escHtml(proxyDownload)}" target="_blank" rel="noopener">
               ⬇ &nbsp;Download
             </a>
-            <button class="btn btn-ghost" onclick="copyToClipboard('${proxyStream}')">
+            <button class="btn btn-ghost" onclick="copyToClipboard('${escHtml(proxyStream)}')">
               🔗 &nbsp;Copy Stream Link
             </button>
           </div>
 
-          <!-- COPY DIRECT LINK -->
+          <!-- COPY STREAM LINK -->
           <div class="copy-section">
-            <input class="copy-input" readonly value="${proxyStream}" id="streamInput" />
+            <input class="copy-input" readonly value="${escHtml(proxyStream)}" id="streamInput" />
             <button class="copy-btn" id="copyBtn" onclick="copyInput()">Copy</button>
           </div>
 
         </div>`;
 
+      // Attach play events after DOM is ready
+      if (isVideo) {
+        const proxyStreamUrl = proxyStream;
+        document.getElementById("playBtn")?.addEventListener("click", () => startPlay(proxyStreamUrl));
+        document.getElementById("playBtnMain")?.addEventListener("click", () => startPlay(proxyStreamUrl));
+      }
+
       result.scrollIntoView({ behavior: "smooth", block: "start" });
     }
 
     // ── PLAY VIDEO ───────────────────────────────────────
-    function startPlay(src, filename) {
+    function startPlay(src) {
       const placeholder = document.getElementById("placeholder");
       const player = document.getElementById("videoPlayer");
+      const thumbBg = document.getElementById("thumbBg");
       if (!player) return;
 
-      placeholder.style.display = "none";
+      // Hide placeholder, show player
+      if (placeholder) placeholder.style.display = "none";
+      if (thumbBg) thumbBg.style.display = "none";
       player.style.display = "block";
+
+      // Set source and load
       player.src = src;
-      player.play().catch(() => {
-        showToast("Autoplay blocked — press play manually", "error");
-      });
+      player.load();
+
+      // Try to play
+      const playPromise = player.play();
+      if (playPromise !== undefined) {
+        playPromise.catch((err) => {
+          // Autoplay blocked — player controls still visible, user can press play
+          console.log("Autoplay blocked:", err.message);
+        });
+      }
     }
 
     // ── ERROR ────────────────────────────────────────────
