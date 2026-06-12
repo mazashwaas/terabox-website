@@ -1,797 +1,256 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>TeraBox Downloader — Fast & Free</title>
-  <meta name="description" content="Download and stream TeraBox videos instantly. No login required. Paste your link and get started." />
-  <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@500;700&display=swap" rel="stylesheet" />
-  <style>
-    /* ── TOKENS ─────────────────────────────────────── */
-    :root {
-      --bg:        #0a0c12;
-      --surface:   #111520;
-      --surface2:  #181d2e;
-      --border:    #1e2540;
-      --accent:    #4f8ef7;
-      --accent2:   #7b5cfa;
-      --success:   #22d47a;
-      --danger:    #f75c5c;
-      --text:      #e8eaf0;
-      --muted:     #6b7294;
-      --radius:    14px;
-      --radius-sm: 8px;
-    }
-
-    /* ── RESET ──────────────────────────────────────── */
-    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-    html { scroll-behavior: smooth; }
-    body {
-      background: var(--bg);
-      color: var(--text);
-      font-family: 'Inter', sans-serif;
-      font-size: 16px;
-      line-height: 1.6;
-      min-height: 100vh;
-      overflow-x: hidden;
-    }
-    a { color: inherit; text-decoration: none; }
-    button { cursor: pointer; border: none; outline: none; font-family: inherit; }
-    input { font-family: inherit; outline: none; border: none; }
-
-    /* ── BACKGROUND GLOW ────────────────────────────── */
-    body::before {
-      content: '';
-      position: fixed;
-      top: -200px; left: 50%;
-      transform: translateX(-50%);
-      width: 800px; height: 500px;
-      background: radial-gradient(ellipse at center, rgba(79,142,247,0.08) 0%, transparent 70%);
-      pointer-events: none;
-      z-index: 0;
-    }
-
-    /* ── NAV ────────────────────────────────────────── */
-    nav {
-      position: sticky; top: 0;
-      background: rgba(10,12,18,0.85);
-      backdrop-filter: blur(12px);
-      border-bottom: 1px solid var(--border);
-      z-index: 100;
-      padding: 0 24px;
-    }
-    .nav-inner {
-      max-width: 900px; margin: 0 auto;
-      display: flex; align-items: center; justify-content: space-between;
-      height: 60px;
-    }
-    .logo {
-      font-family: 'Space Grotesk', sans-serif;
-      font-weight: 700; font-size: 20px;
-      display: flex; align-items: center; gap: 8px;
-    }
-    .logo-icon {
-      width: 30px; height: 30px;
-      background: linear-gradient(135deg, var(--accent), var(--accent2));
-      border-radius: 8px;
-      display: flex; align-items: center; justify-content: center;
-      font-size: 14px;
-    }
-    .nav-badge {
-      font-size: 11px; font-weight: 600;
-      background: rgba(79,142,247,0.15);
-      color: var(--accent);
-      padding: 3px 10px; border-radius: 20px;
-      border: 1px solid rgba(79,142,247,0.25);
-    }
-
-    /* ── HERO ───────────────────────────────────────── */
-    .hero {
-      max-width: 900px; margin: 0 auto;
-      padding: 80px 24px 48px;
-      text-align: center;
-      position: relative; z-index: 1;
-    }
-    .hero-eyebrow {
-      display: inline-flex; align-items: center; gap: 6px;
-      font-size: 12px; font-weight: 600; letter-spacing: 0.08em;
-      text-transform: uppercase; color: var(--accent);
-      background: rgba(79,142,247,0.08);
-      border: 1px solid rgba(79,142,247,0.2);
-      padding: 5px 14px; border-radius: 20px;
-      margin-bottom: 24px;
-    }
-    .hero h1 {
-      font-family: 'Space Grotesk', sans-serif;
-      font-size: clamp(32px, 6vw, 56px);
-      font-weight: 700; line-height: 1.1;
-      margin-bottom: 16px;
-    }
-    .hero h1 span {
-      background: linear-gradient(90deg, var(--accent), var(--accent2));
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
-      background-clip: text;
-    }
-    .hero p {
-      font-size: 18px; color: var(--muted);
-      max-width: 500px; margin: 0 auto 40px;
-    }
-
-    /* ── INPUT BOX ─────────────────────────────────── */
-    .input-wrap {
-      position: relative;
-      max-width: 680px; margin: 0 auto;
-    }
-    /* animated gradient border — signature element */
-    .input-wrap::before {
-      content: '';
-      position: absolute; inset: -2px;
-      border-radius: calc(var(--radius) + 2px);
-      background: linear-gradient(90deg, var(--accent), var(--accent2), var(--accent));
-      background-size: 200% 100%;
-      animation: borderFlow 3s linear infinite;
-      opacity: 0;
-      transition: opacity 0.3s;
-      z-index: 0;
-    }
-    .input-wrap:focus-within::before { opacity: 1; }
-    @keyframes borderFlow {
-      0%   { background-position: 0% 0%; }
-      100% { background-position: 200% 0%; }
-    }
-    .input-inner {
-      position: relative; z-index: 1;
-      display: flex; align-items: center;
-      background: var(--surface);
-      border: 1px solid var(--border);
-      border-radius: var(--radius);
-      overflow: hidden;
-    }
-    .input-icon {
-      padding: 0 16px; color: var(--muted); font-size: 18px;
-      flex-shrink: 0;
-    }
-    #linkInput {
-      flex: 1; padding: 16px 8px;
-      background: transparent; color: var(--text);
-      font-size: 15px;
-    }
-    #linkInput::placeholder { color: var(--muted); }
-    .paste-btn {
-      padding: 8px 14px; margin: 8px;
-      background: var(--surface2);
-      color: var(--muted); font-size: 13px; font-weight: 500;
-      border-radius: var(--radius-sm);
-      transition: all 0.2s;
-      flex-shrink: 0;
-    }
-    .paste-btn:hover { color: var(--text); background: var(--border); }
-    .fetch-btn {
-      padding: 12px 28px; margin: 8px;
-      background: linear-gradient(135deg, var(--accent), var(--accent2));
-      color: #fff; font-size: 15px; font-weight: 600;
-      border-radius: var(--radius-sm);
-      transition: all 0.2s; flex-shrink: 0;
-      box-shadow: 0 4px 20px rgba(79,142,247,0.3);
-    }
-    .fetch-btn:hover { transform: translateY(-1px); box-shadow: 0 6px 24px rgba(79,142,247,0.4); }
-    .fetch-btn:active { transform: translateY(0); }
-    .fetch-btn:disabled { opacity: 0.6; cursor: not-allowed; transform: none; }
-
-    /* ── FEATURES STRIP ─────────────────────────────── */
-    .features {
-      display: flex; justify-content: center; flex-wrap: wrap;
-      gap: 10px 24px; margin-top: 20px;
-    }
-    .feature-item {
-      display: flex; align-items: center; gap: 6px;
-      font-size: 13px; color: var(--muted);
-    }
-    .feature-item span { color: var(--success); }
-
-    /* ── RESULT SECTION ─────────────────────────────── */
-    #result {
-      max-width: 900px; margin: 0 auto;
-      padding: 0 24px 80px;
-      position: relative; z-index: 1;
-    }
-
-    /* Loading */
-    .loader {
-      text-align: center; padding: 60px;
-    }
-    .spinner {
-      width: 44px; height: 44px; margin: 0 auto 16px;
-      border: 3px solid var(--border);
-      border-top-color: var(--accent);
-      border-radius: 50%;
-      animation: spin 0.8s linear infinite;
-    }
-    @keyframes spin { to { transform: rotate(360deg); } }
-    .loader p { color: var(--muted); font-size: 14px; }
-
-    /* Error */
-    .error-box {
-      background: rgba(247,92,92,0.08);
-      border: 1px solid rgba(247,92,92,0.25);
-      border-radius: var(--radius);
-      padding: 20px 24px;
-      display: flex; align-items: flex-start; gap: 14px;
-    }
-    .error-icon { font-size: 20px; flex-shrink: 0; margin-top: 2px; }
-    .error-box h3 { font-size: 15px; font-weight: 600; color: var(--danger); margin-bottom: 4px; }
-    .error-box p { font-size: 14px; color: var(--muted); }
-
-    /* Card */
-    .result-card {
-      background: var(--surface);
-      border: 1px solid var(--border);
-      border-radius: var(--radius);
-      overflow: hidden;
-      animation: fadeUp 0.4s ease;
-    }
-    @keyframes fadeUp {
-      from { opacity: 0; transform: translateY(16px); }
-      to   { opacity: 1; transform: translateY(0); }
-    }
-
-    /* Video Player */
-    .player-wrap {
-      position: relative;
-      background: #000;
-      aspect-ratio: 16/9;
-    }
-    #videoPlayer {
-      width: 100%; height: 100%;
-      display: block;
-    }
-    .player-placeholder {
-      position: absolute; inset: 0;
-      display: flex; flex-direction: column;
-      align-items: center; justify-content: center;
-      gap: 12px; color: var(--muted);
-      background: linear-gradient(135deg, #0d1220, #111826);
-    }
-    .play-icon-big {
-      width: 64px; height: 64px;
-      background: rgba(79,142,247,0.15);
-      border: 2px solid rgba(79,142,247,0.3);
-      border-radius: 50%;
-      display: flex; align-items: center; justify-content: center;
-      font-size: 24px; cursor: pointer;
-      transition: all 0.2s;
-    }
-    .play-icon-big:hover {
-      background: rgba(79,142,247,0.25);
-      transform: scale(1.05);
-    }
-    .thumb-bg {
-      position: absolute; inset: 0;
-      background-size: cover; background-position: center;
-      filter: brightness(0.3);
-    }
-    .player-placeholder > * { position: relative; z-index: 1; }
-
-    /* File Info */
-    .file-info {
-      padding: 20px 24px;
-      border-bottom: 1px solid var(--border);
-      display: flex; align-items: center; justify-content: space-between;
-      gap: 16px; flex-wrap: wrap;
-    }
-    .file-meta h2 {
-      font-size: 15px; font-weight: 600;
-      margin-bottom: 4px;
-      word-break: break-all;
-    }
-    .file-tags {
-      display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
-    }
-    .tag {
-      font-size: 12px; font-weight: 500;
-      padding: 2px 10px; border-radius: 20px;
-    }
-    .tag-size {
-      background: rgba(79,142,247,0.1);
-      color: var(--accent);
-      border: 1px solid rgba(79,142,247,0.2);
-    }
-    .tag-type {
-      background: rgba(123,92,250,0.1);
-      color: var(--accent2);
-      border: 1px solid rgba(123,92,250,0.2);
-    }
-    .tag-time {
-      background: rgba(107,114,148,0.1);
-      color: var(--muted);
-      border: 1px solid var(--border);
-      font-size: 11px;
-    }
-
-    /* Action Buttons */
-    .actions {
-      padding: 20px 24px;
-      display: flex; gap: 12px; flex-wrap: wrap;
-    }
-    .btn {
-      display: inline-flex; align-items: center; gap: 8px;
-      padding: 11px 22px; border-radius: var(--radius-sm);
-      font-size: 14px; font-weight: 600;
-      transition: all 0.2s; cursor: pointer;
-    }
-    .btn-primary {
-      background: linear-gradient(135deg, var(--accent), var(--accent2));
-      color: #fff;
-      box-shadow: 0 3px 16px rgba(79,142,247,0.25);
-    }
-    .btn-primary:hover { transform: translateY(-1px); box-shadow: 0 5px 20px rgba(79,142,247,0.35); }
-    .btn-secondary {
-      background: var(--surface2);
-      color: var(--text);
-      border: 1px solid var(--border);
-    }
-    .btn-secondary:hover { background: var(--border); }
-    .btn-ghost {
-      background: transparent; color: var(--muted);
-      border: 1px solid var(--border);
-    }
-    .btn-ghost:hover { color: var(--text); background: var(--surface2); }
-
-    /* Copy link section */
-    .copy-section {
-      padding: 0 24px 20px;
-      display: flex; gap: 8px;
-    }
-    .copy-input {
-      flex: 1; padding: 10px 14px;
-      background: var(--surface2);
-      border: 1px solid var(--border);
-      border-radius: var(--radius-sm);
-      color: var(--muted); font-size: 13px;
-      overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
-    }
-    .copy-btn {
-      padding: 10px 18px;
-      background: var(--surface2);
-      color: var(--text); font-size: 13px; font-weight: 600;
-      border: 1px solid var(--border);
-      border-radius: var(--radius-sm);
-      transition: all 0.2s; flex-shrink: 0;
-    }
-    .copy-btn:hover { background: var(--border); }
-    .copy-btn.copied { color: var(--success); border-color: rgba(34,212,122,0.3); }
-
-    /* Toast */
-    #toast {
-      position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%) translateY(20px);
-      background: var(--surface);
-      border: 1px solid var(--border);
-      color: var(--text); font-size: 14px; font-weight: 500;
-      padding: 12px 22px; border-radius: 30px;
-      box-shadow: 0 8px 32px rgba(0,0,0,0.4);
-      opacity: 0; transition: all 0.3s; pointer-events: none;
-      z-index: 999; white-space: nowrap;
-    }
-    #toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
-    #toast.success { border-color: rgba(34,212,122,0.3); color: var(--success); }
-    #toast.error-t  { border-color: rgba(247,92,92,0.3); color: var(--danger); }
-
-    /* How to section */
-    .how-section {
-      max-width: 900px; margin: 0 auto;
-      padding: 0 24px 80px;
-      position: relative; z-index: 1;
-    }
-    .section-title {
-      font-family: 'Space Grotesk', sans-serif;
-      font-size: 22px; font-weight: 700;
-      margin-bottom: 24px; text-align: center;
-    }
-    .steps {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-      gap: 16px;
-    }
-    .step-card {
-      background: var(--surface);
-      border: 1px solid var(--border);
-      border-radius: var(--radius);
-      padding: 24px;
-      transition: border-color 0.2s;
-    }
-    .step-card:hover { border-color: rgba(79,142,247,0.3); }
-    .step-num {
-      font-family: 'Space Grotesk', sans-serif;
-      font-size: 13px; font-weight: 700;
-      color: var(--accent); margin-bottom: 12px;
-    }
-    .step-card h3 { font-size: 15px; font-weight: 600; margin-bottom: 6px; }
-    .step-card p { font-size: 13px; color: var(--muted); line-height: 1.5; }
-
-    /* Footer */
-    footer {
-      border-top: 1px solid var(--border);
-      padding: 24px;
-      text-align: center; color: var(--muted); font-size: 13px;
-      position: relative; z-index: 1;
-    }
-
-    /* Responsive */
-    @media (max-width: 600px) {
-      .hero { padding: 48px 16px 32px; }
-      .hero p { font-size: 15px; }
-      .input-inner { flex-wrap: wrap; }
-      .paste-btn { display: none; }
-      .fetch-btn { margin: 0 8px 8px; width: calc(100% - 16px); }
-      #linkInput { padding: 14px 8px; }
-      .file-info { flex-direction: column; }
-      .actions { flex-direction: column; }
-      .btn { justify-content: center; }
-      .copy-section { flex-direction: column; }
-    }
-
-    @media (prefers-reduced-motion: reduce) {
-      .input-wrap::before { animation: none; opacity: 0.5; }
-      .spinner { animation: none; }
-      .result-card { animation: none; }
-    }
-  </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Premium TeraBox Video Player & Downloader</title>
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/plyr@3.7.8/dist/plyr.css" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        .plyr { border-radius: 0.75rem; overflow: hidden; box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.3); }
+    </style>
 </head>
-<body>
+<body class="bg-slate-900 text-slate-100 font-sans min-h-screen flex flex-col justify-between">
 
-  <!-- NAV -->
-  <nav>
-    <div class="nav-inner">
-      <div class="logo">
-        <div class="logo-icon">▶</div>
-        TeraFetch
-      </div>
-      <div class="nav-badge">Free • No Login</div>
-    </div>
-  </nav>
-
-  <!-- HERO -->
-  <section class="hero">
-    <div class="hero-eyebrow">
-      <span>⚡</span> Instant TeraBox Downloader
-    </div>
-    <h1>Stream & Download<br /><span>TeraBox Videos</span></h1>
-    <p>Paste any TeraBox share link. Watch instantly or download at full speed.</p>
-
-    <div class="input-wrap">
-      <div class="input-inner">
-        <div class="input-icon">🔗</div>
-        <input
-          type="url"
-          id="linkInput"
-          placeholder="https://terabox.com/s/..."
-          autocomplete="off"
-          autocorrect="off"
-          spellcheck="false"
-        />
-        <button class="paste-btn" onclick="pasteLink()">Paste</button>
-        <button class="fetch-btn" onclick="fetchLink()" id="fetchBtn">Fetch →</button>
-      </div>
-    </div>
-
-    <div class="features">
-      <div class="feature-item"><span>✓</span> No login needed</div>
-      <div class="feature-item"><span>✓</span> Fast streaming</div>
-      <div class="feature-item"><span>✓</span> Direct download</div>
-      <div class="feature-item"><span>✓</span> All TeraBox links</div>
-    </div>
-  </section>
-
-  <!-- RESULT -->
-  <div id="result"></div>
-
-  <!-- HOW TO USE -->
-  <section class="how-section" id="how">
-    <div class="section-title">How it works</div>
-    <div class="steps">
-      <div class="step-card">
-        <div class="step-num">STEP 01</div>
-        <h3>Copy the link</h3>
-        <p>Open your TeraBox share link and copy it from the browser or app.</p>
-      </div>
-      <div class="step-card">
-        <div class="step-num">STEP 02</div>
-        <h3>Paste & Fetch</h3>
-        <p>Paste the link above and click Fetch. We'll extract the file info instantly.</p>
-      </div>
-      <div class="step-card">
-        <div class="step-num">STEP 03</div>
-        <h3>Watch or Download</h3>
-        <p>Stream directly in the browser or download the file at full speed.</p>
-      </div>
-    </div>
-  </section>
-
-  <!-- FOOTER -->
-  <footer>
-    <p>TeraFetch — Fast TeraBox video downloader. Not affiliated with TeraBox.</p>
-  </footer>
-
-  <!-- TOAST -->
-  <div id="toast"></div>
-
-  <script>
-    // ── CONFIG ──────────────────────────────────────────
-    const API_BASE = "https://terabox-api-3zp5.onrender.com";
-
-    // ── AUTO LINK CONVERTER ──────────────────────────────
-    // All known TeraBox domains → normalize to terabox.com
-    const TERABOX_DOMAINS = [
-      "terabox.com", "www.terabox.com",
-      "terabox.app", "www.terabox.app",
-      "teraboxlink.com", "www.teraboxlink.com",
-      "1024terabox.com", "www.1024terabox.com",
-      "teraboxshare.com", "www.teraboxshare.com",
-      "freeterabox.com", "www.freeterabox.com",
-      "4funbox.co", "www.4funbox.co",
-      "tibibox.com", "www.tibibox.com",
-      "terafileshare.com", "www.terafileshare.com",
-      "dm.terabox.app",
-    ];
-
-    function normalizeTeraboxUrl(input) {
-      input = input.trim();
-      if (!input.startsWith("http")) input = "https://" + input;
-      try {
-        const u = new URL(input);
-        const host = u.hostname.toLowerCase();
-        const isTerabox = TERABOX_DOMAINS.some(d => host === d || host.endsWith("." + d));
-        if (!isTerabox) return null; // not a terabox link
-        // Keep path & query, just normalize domain
-        u.hostname = "www.terabox.com";
-        u.protocol = "https:";
-        return u.toString();
-      } catch {
-        return null;
-      }
-    }
-
-    // Auto-convert on input change
-    document.getElementById("linkInput").addEventListener("input", function () {
-      const val = this.value.trim();
-      if (!val) return;
-      const normalized = normalizeTeraboxUrl(val);
-      if (normalized && normalized !== val) {
-        this.value = normalized;
-        this.style.color = "var(--success)";
-        setTimeout(() => { this.style.color = ""; }, 1200);
-        showToast("Link converted ✓", "success");
-      }
-    });
-
-    // ── PASTE ────────────────────────────────────────────
-    async function pasteLink() {
-      try {
-        const text = await navigator.clipboard.readText();
-        const input = document.getElementById("linkInput");
-        input.value = text;
-        // Trigger conversion
-        input.dispatchEvent(new Event("input"));
-        input.focus();
-      } catch {
-        showToast("Paste manually using Ctrl+V", "error");
-      }
-    }
-
-    // ── ENTER KEY ────────────────────────────────────────
-    document.getElementById("linkInput").addEventListener("keydown", (e) => {
-      if (e.key === "Enter") fetchLink();
-    });
-
-    // ── FETCH ────────────────────────────────────────────
-    async function fetchLink() {
-      let url = document.getElementById("linkInput").value.trim();
-      const btn = document.getElementById("fetchBtn");
-      const result = document.getElementById("result");
-
-      if (!url) {
-        showToast("Please paste a TeraBox link first", "error");
-        document.getElementById("linkInput").focus();
-        return;
-      }
-
-      // Auto-convert before fetching
-      const converted = normalizeTeraboxUrl(url);
-      if (!converted) {
-        showToast("Invalid or unsupported link", "error");
-        return;
-      }
-      url = converted;
-      document.getElementById("linkInput").value = url;
-
-      // Loading state
-      btn.disabled = true;
-      btn.textContent = "Fetching…";
-      result.innerHTML = `
-        <div class="loader">
-          <div class="spinner"></div>
-          <p>Fetching file info…</p>
-        </div>`;
-
-      try {
-        const res = await fetch(`${API_BASE}/api?url=${encodeURIComponent(url)}`);
-        const data = await res.json();
-
-        if (data.status !== "success") {
-          showError(data.error || data.message || "Could not fetch file. Check your link.");
-          return;
-        }
-
-        renderResult(data);
-      } catch (err) {
-        showError("Network error — API may be starting up, try again in a moment.");
-      } finally {
-        btn.disabled = false;
-        btn.textContent = "Fetch →";
-      }
-    }
-
-    // ── RENDER RESULT ────────────────────────────────────
-    // Store data globally for player access
-    let _currentData = null;
-
-    function renderResult(data) {
-      _currentData = data;
-      const result = document.getElementById("result");
-      const isVideo = data.is_video;
-      const directUrl = data.download || null;  // dlink — fast, no proxy
-      const proxyStream = `${API_BASE}/download?url=${encodeURIComponent(data.url)}`;
-      const proxyDownload = `${API_BASE}/download?url=${encodeURIComponent(data.url)}&dl=1`;
-      const thumb = data.thumbs?.url3 || data.thumbs?.url2 || data.thumbs?.url1 || null;
-      const ext = (data.filename || "").split(".").pop().toUpperCase();
-      // Try direct dlink first (fastest), fallback to proxy
-      const streamSrc = directUrl || proxyStream;
-
-      result.innerHTML = `
-        <div class="result-card">
-          ${isVideo ? `
-          <div class="player-wrap" id="playerWrap">
-            <video
-              id="videoPlayer"
-              controls
-              preload="none"
-              playsinline
-              webkit-playsinline
-              style="width:100%;height:100%;display:block;background:#000;position:relative;z-index:2;"
-            ></video>
-            ${thumb ? `<div class="thumb-bg" id="thumbBg" style="background-image:url('${escHtml(thumb)}');"></div>` : ""}
-            <div class="player-placeholder" id="placeholder" style="cursor:pointer;">
-              <div class="play-icon-big">&#9654;</div>
-              <p style="font-size:14px;">Tap to play</p>
-              ${data.size ? `<p style="font-size:12px;opacity:0.5;">${data.size}</p>` : ""}
+    <header class="bg-slate-800/50 backdrop-blur-md border-b border-slate-700/50 sticky top-0 z-50">
+        <div class="max-w-6xl mx-auto px-4 py-4 flex justify-between items-center">
+            <div class="flex items-center space-x-3">
+                <div class="bg-blue-600 p-2 rounded-lg text-white">
+                    <i class="fa-solid fa-play fa-lg"></i>
+                </div>
+                <span class="text-xl font-bold tracking-tight bg-gradient-to-r from-blue-400 to-indigo-400 bg-clip-text text-transparent">TeraStream</span>
             </div>
-          </div>
-          ` : `
-          <div style="padding:32px;text-align:center;">
-            <div style="font-size:48px;margin-bottom:8px;">&#128196;</div>
-            <p style="color:var(--muted);font-size:14px;">File ready to download</p>
-          </div>
-          `}
-          <div class="file-info">
-            <div class="file-meta">
-              <h2>${escHtml(data.filename || "Unknown file")}</h2>
-              <div class="file-tags">
-                ${data.size ? `<span class="tag tag-size">${data.size}</span>` : ""}
-                ${ext ? `<span class="tag tag-type">${ext}</span>` : ""}
-                <span class="tag tag-time">&#9889; ${data.response_time}</span>
-              </div>
+            <span class="text-xs bg-slate-700 px-2.5 py-1 rounded-full text-slate-400 border border-slate-600">v1.0 Pro</span>
+        </div>
+    </header>
+
+    <main class="max-w-4xl mx-auto px-4 py-8 flex-grow w-full">
+        <div class="bg-slate-800 border border-slate-700/60 rounded-2xl p-6 shadow-xl mb-8">
+            <h1 class="text-2xl font-bold mb-2 text-center md:text-left">TeraBox Video Player & Downloader</h1>
+            <p class="text-sm text-slate-400 mb-6 text-center md:text-left">Paste your TeraBox link below to stream instantly in high quality or download with one click.</p>
+            
+            <form id="searchForm" class="flex flex-col md:flex-row gap-3">
+                <div class="relative flex-grow">
+                    <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-500">
+                        <i class="fa-solid fa-link"></i>
+                    </div>
+                    <input type="url" id="teraUrl" required
+                        placeholder="https://terabox.com/s/..." 
+                        class="w-full pl-10 pr-4 py-3.5 bg-slate-900/50 border border-slate-700 rounded-xl focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition text-slate-200 placeholder-slate-500">
+                </div>
+                <button type="submit" id="btnSubmit" class="bg-blue-600 hover:bg-blue-500 active:bg-blue-700 text-white font-medium px-8 py-3.5 rounded-xl transition flex items-center justify-center space-x-2 cursor-pointer whitespace-nowrap">
+                    <span>Fetch Video</span>
+                    <i class="fa-solid fa-arrow-right"></i>
+                </button>
+            </form>
+        </div>
+
+        <div id="loader" class="hidden flex-col items-center justify-center py-12 space-y-4">
+            <div class="animate-spin rounded-full h-12 w-12 border-4 border-blue-500/20 border-t-blue-500"></div>
+            <p class="text-slate-400 text-sm animate-pulse">Extracting premium stream links...</p>
+        </div>
+
+        <div id="errorMessage" class="hidden bg-red-500/10 border border-red-500/20 text-red-400 p-4 rounded-xl text-sm mb-6 flex items-center space-x-3">
+            <i class="fa-solid fa-circle-exclamation text-lg"></i>
+            <span id="errorText">Failed to fetch data. Please check your link.</span>
+        </div>
+
+        <div id="resultContainer" class="hidden space-y-6">
+            
+            <div class="bg-slate-800 border border-slate-700/60 rounded-2xl p-4 shadow-xl">
+                <div class="mb-4">
+                    <h2 id="videoTitle" class="text-lg font-semibold text-slate-200 line-clamp-2">Video Title</h2>
+                    <p id="videoSize" class="text-xs text-slate-400 mt-1"><i class="fa-solid fa-database mr-1"></i> Size: --</p>
+                </div>
+
+                <div class="relative">
+                    <video id="player" playsinline controls class="w-full"></video>
+                </div>
             </div>
-          </div>
-          <div class="actions">
-            ${isVideo ? `<button class="btn btn-primary" id="playBtnMain">&#9654; &nbsp;Play Video</button>` : ""}
-            <a class="btn btn-secondary" href="${escHtml(proxyDownload)}" target="_blank" rel="noopener">&#11015; &nbsp;Download</a>
-            <button class="btn btn-ghost" onclick="copyToClipboard('${escHtml(proxyStream)}')">&#128279; &nbsp;Copy Stream Link</button>
-          </div>
-          <div class="copy-section">
-            <input class="copy-input" readonly value="${escHtml(proxyStream)}" id="streamInput" />
-            <button class="copy-btn" id="copyBtn" onclick="copyInput()">Copy</button>
-          </div>
-        </div>`;
 
-      if (isVideo) {
-        const player = document.getElementById("videoPlayer");
-        const placeholder = document.getElementById("placeholder");
-        const thumbBg = document.getElementById("thumbBg");
+            <div class="bg-slate-800 border border-slate-700/60 rounded-2xl p-6 shadow-xl">
+                <h3 class="text-md font-bold text-slate-300 uppercase tracking-wider mb-4 flex items-center">
+                    <i class="fa-solid fa-download mr-2 text-blue-500"></i> Download Options
+                </h3>
+                
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <a id="btnDownload" href="#" target="_blank" class="flex items-center justify-between p-4 bg-emerald-600/10 hover:bg-emerald-600/20 border border-emerald-500/20 rounded-xl transition group">
+                        <div class="flex items-center space-x-3">
+                            <div class="p-2.5 bg-emerald-500/20 text-emerald-400 rounded-lg">
+                                <i class="fa-solid fa-bolt text-xl"></i>
+                            </div>
+                            <div>
+                                <p class="font-semibold text-emerald-400 text-sm">Direct High-Speed Download</p>
+                                <p class="text-xs text-slate-400">Best for external managers (IDM/ADM)</p>
+                            </div>
+                        </div>
+                        <i class="fa-solid fa-chevron-right text-slate-500 group-hover:text-emerald-400 transition"></i>
+                    </a>
 
-        // Try direct dlink first (no proxy = faster)
-        // If it fails (cookie error), fallback to proxy
-        let usingDirect = !!directUrl;
-        player.src = streamSrc;
+                    <a id="btnFastStream" href="#" target="_blank" class="flex items-center justify-between p-4 bg-indigo-600/10 hover:bg-indigo-600/20 border border-indigo-500/20 rounded-xl transition group">
+                        <div class="flex items-center space-x-3">
+                            <div class="p-2.5 bg-indigo-500/20 text-indigo-400 rounded-lg">
+                                <i class="fa-solid fa-circle-play text-xl"></i>
+                            </div>
+                            <div>
+                                <p class="font-semibold text-indigo-400 text-sm">Open in External Player</p>
+                                <p class="text-xs text-slate-400">Play in VLC / MX Player (720p)</p>
+                            </div>
+                        </div>
+                        <i class="fa-solid fa-chevron-right text-slate-500 group-hover:text-indigo-400 transition"></i>
+                    </a>
+                </div>
 
-        function hidePlaceholder() {
-          if (placeholder) placeholder.style.display = "none";
-          if (thumbBg) thumbBg.style.display = "none";
-        }
+                <div class="mt-6 pt-6 border-t border-slate-700/50">
+                    <p class="text-xs font-semibold text-slate-400 mb-3 uppercase tracking-wider">Stream Quality (Internal Player)</p>
+                    <div id="qualityContainer" class="flex flex-wrap gap-2">
+                        </div>
+                </div>
 
-        function doPlay() {
-          hidePlaceholder();
-          player.play().catch(e => console.warn("play() failed:", e.message));
-        }
+            </div>
+        </div>
+    </main>
 
-        placeholder?.addEventListener("click", doPlay);
-        document.getElementById("playBtnMain")?.addEventListener("click", doPlay);
+    <footer class="bg-slate-950 text-slate-500 text-xs py-6 text-center border-t border-slate-800/60">
+        <p>&copy; 2026 TeraStream Premium. All rights reserved.</p>
+    </footer>
 
-        player.addEventListener("playing", hidePlaceholder);
-
-        // If direct URL fails, auto-fallback to proxy
-        player.addEventListener("error", () => {
-          if (usingDirect && proxyStream) {
-            console.log("Direct URL failed, switching to proxy...");
-            usingDirect = false;
-            player.src = proxyStream;
-            hidePlaceholder();
-            player.load();
-            player.play().catch(() => {});
-          } else {
-            if (placeholder) {
-              placeholder.style.display = "flex";
-              placeholder.innerHTML = `<p style="color:var(--danger);font-size:14px;padding:20px;text-align:center;">Could not load video.<br/>Try Download button instead.</p>`;
-            }
-          }
+    <script src="https://cdn.jsdelivr.net/npm/plyr@3.7.8/dist/plyr.js"></script>
+    
+    <script>
+        // Initialize Plyr Player
+        const player = new Plyr('#player', {
+            controls: ['play-large', 'play', 'progress', 'current-time', 'duration', 'mute', 'volume', 'captions', 'settings', 'pip', 'airplay', 'fullscreen'],
+            ratio: '16:9'
         });
-      }
 
-      result.scrollIntoView({ behavior: "smooth", block: "start" });
-    }
+        const form = document.getElementById('searchForm');
+        const loader = document.getElementById('loader');
+        const errorDiv = document.getElementById('errorMessage');
+        const errorText = document.getElementById('errorText');
+        const resultContainer = document.getElementById('resultContainer');
 
-    // ── ERROR ────────────────────────────────────────────
-    function showError(msg) {
-      document.getElementById("result").innerHTML = `
-        <div class="error-box">
-          <div class="error-icon">⚠️</div>
-          <div>
-            <h3>Could not fetch file</h3>
-            <p>${escHtml(msg)}</p>
-          </div>
-        </div>`;
-    }
+        let activeStreams = {}; 
 
-    // ── COPY ─────────────────────────────────────────────
-    function copyInput() {
-      const val = document.getElementById("streamInput")?.value;
-      if (!val) return;
-      copyToClipboard(val);
-      const btn = document.getElementById("copyBtn");
-      btn.textContent = "Copied!";
-      btn.classList.add("copied");
-      setTimeout(() => { btn.textContent = "Copy"; btn.classList.remove("copied"); }, 2000);
-    }
+        form.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const inputUrl = document.getElementById('teraUrl').value.trim();
+            
+            // Reset Views
+            errorDiv.classList.add('hidden');
+            resultContainer.classList.add('hidden');
+            loader.classList.remove('hidden');
 
-    async function copyToClipboard(text) {
-      try {
-        await navigator.clipboard.writeText(text);
-        showToast("Link copied!", "success");
-      } catch {
-        showToast("Could not copy — try manually", "error");
-      }
-    }
+            // Render free APIs might go to sleep. Using AllOrigins CORS proxy for Blogspot support
+            const targetApi = `https://teraboxnewapi.onrender.com/api/terabox?url=${encodeURIComponent(inputUrl)}`;
+            const proxyUrl = `https://api.allorigins.win/get?url=${encodeURIComponent(targetApi)}`;
 
-    // ── TOAST ────────────────────────────────────────────
-    let toastTimer;
-    function showToast(msg, type = "") {
-      const t = document.getElementById("toast");
-      t.textContent = msg;
-      t.className = "show" + (type === "success" ? " success" : type === "error" ? " error-t" : "");
-      clearTimeout(toastTimer);
-      toastTimer = setTimeout(() => { t.className = ""; }, 3000);
-    }
+            try {
+                const response = await fetch(proxyUrl);
+                if (!response.ok) throw new Error("Proxy response failed");
+                
+                const proxyData = await response.json();
+                const data = JSON.parse(proxyData.contents);
 
-    // ── UTILS ────────────────────────────────────────────
-    function escHtml(str) {
-      return String(str || "")
-        .replace(/&/g, "&amp;")
-        .replace(/</g, "&lt;")
-        .replace(/>/g, "&gt;")
-        .replace(/"/g, "&quot;")
-        .replace(/'/g, "&#39;");
-    }
-  </script>
+                if (data.success && data.data && data.data.list && data.data.list.length > 0) {
+                    const videoData = data.data.list[0];
+                    renderVideoData(videoData);
+                } else {
+                    showError("Invalid link or data structure returned. If Render is waking up, please hit fetch again.");
+                }
+            } catch (err) {
+                console.error(err);
+                showError("Server is waking up or connection timed out. Please try clicking 'Fetch Video' again in a few seconds.");
+            } finally {
+                loader.classList.add('hidden');
+            }
+        });
+
+        function renderVideoData(video) {
+            // Update Title and Info
+            document.getElementById('videoTitle').innerText = video.name || "TeraBox_Video.mp4";
+            document.getElementById('videoSize').innerHTML = `<i class="fa-solid fa-database mr-1"></i> Size: ${video.size_formatted || 'Unknown'}`;
+
+            // Main Direct Download link
+            document.getElementById('btnDownload').href = video.normal_dlink || "#";
+            
+            // Qualities and Default Streams
+            activeStreams = video.fast_stream_url || {};
+            let defaultStreamUrl = activeStreams['720p'] || activeStreams['480p'] || activeStreams['360p'] || video.stream_url;
+            
+            document.getElementById('btnFastStream').href = defaultStreamUrl || "#";
+
+            // Push Source to Player
+            player.source = {
+                type: 'video',
+                title: video.name,
+                sources: [{ src: defaultStreamUrl, type: 'video/mp4' }],
+                poster: video.thumbnail || ''
+            };
+
+            // Build Dynamic Quality Buttons
+            const qContainer = document.getElementById('qualityContainer');
+            qContainer.innerHTML = ''; 
+
+            const qualities = Object.keys(activeStreams);
+            
+            if(qualities.length === 0 && video.stream_url) {
+                // Fallback button if fast stream objects are empty
+                createQualityButton("Standard", video.stream_url, true, qContainer);
+            } else {
+                qualities.forEach(quality => {
+                    const isSelected = activeStreams[quality] === defaultStreamUrl;
+                    createQualityButton(quality, activeStreams[quality], isSelected, qContainer);
+                });
+            }
+
+            resultContainer.classList.remove('hidden');
+        }
+
+        function createQualityButton(label, url, isSelected, container) {
+            const btn = document.createElement('button');
+            btn.type = "button";
+            btn.className = `cursor-pointer px-4 py-2 rounded-lg text-xs font-medium transition flex items-center space-x-1.5 ${
+                isSelected 
+                ? 'bg-blue-600 text-white shadow-md shadow-blue-600/20 active-q' 
+                : 'bg-slate-700 hover:bg-slate-600 text-slate-300'
+            }`;
+            btn.innerHTML = `<i class="fa-solid fa-film"></i> <span>${label}</span>`;
+            
+            btn.onclick = () => {
+                document.querySelectorAll('#qualityContainer button').forEach(b => {
+                    b.classList.remove('bg-blue-600', 'text-white', 'shadow-md', 'shadow-blue-600/20', 'active-q');
+                    b.classList.add('bg-slate-700', 'text-slate-300');
+                });
+                btn.classList.remove('bg-slate-700', 'text-slate-300');
+                btn.classList.add('bg-blue-600', 'text-white', 'shadow-md', 'shadow-blue-600/20', 'active-q');
+                
+                switchQuality(url);
+            };
+
+            container.appendChild(btn);
+        }
+
+        function switchQuality(streamUrl) {
+            const currentTime = player.currentTime;
+            const isPlaying = player.playing;
+
+            player.source = {
+                type: 'video',
+                sources: [{ src: streamUrl, type: 'video/mp4' }]
+            };
+
+            player.once('ready', () => {
+                player.currentTime = currentTime;
+                if (isPlaying) player.play();
+            });
+        }
+
+        function showError(msg) {
+            errorText.innerText = msg;
+            errorDiv.classList.remove('hidden');
+        }
+    </script>
 </body>
 </html>
